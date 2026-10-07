@@ -1,0 +1,14 @@
+# 评测问答集 —— 扩充 SKU 与 FAQ 时同步补充; expect_sku 用于命中率统计
+cases:
+  - q: 碧云泉C5 Plus滤芯多久换一次?
+    expect_sku: BYQ-C5PLUS
+  - q: C5 Plus需要接水管安装吗?
+    expect_sku: BYQ-C5PLUS
+  - q: LUCY吸尘器能吸地毯吗?
+    expect_sku: LEXY-LUCY
+  - q: 咖博士咖啡机必须用净水吗?
+    expect_sku: DR-COFFEE
+  - q: 碧云泉和咖博士可以一起用吗?
+    expect_sku: DR-COFFEE
+  - q: 吸尘器尘杯能水洗吗?
+    expect_sku: LEXY-LUCY
