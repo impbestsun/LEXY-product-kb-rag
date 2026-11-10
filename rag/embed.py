@@ -1,4 +1,4 @@
-"""rag.embed —— Embedding 客户端 (OpenAI 兼容接口, 支持本地 bge-m3 / 部门服务)。"""
+"""rag.embed —— Embedding 客户端 (OpenAI 兼容接口, 支持本地 bge-m3 / 自托管服务)。"""
 from __future__ import annotations
 
 import json

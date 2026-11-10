@@ -1,7 +1,7 @@
 """rag.qa —— RAG 问答链: 检索 -> grounding 生成 -> 带引用返回。
 
-默认 LLM 指向部门 RISC-V AI 服务器 (Qwen3.6-35B-A3B, llama.cpp OpenAI 兼容接口):
-    export LLM_BASE_URL=http://192.168.7.176:8080/v1
+通过环境变量配置 OpenAI 兼容的 LLM 服务 (默认本机回环地址):
+    export LLM_BASE_URL=http://127.0.0.1:8080/v1
     export LLM_MODEL=qwen3.6-35b-a3b
 红线: 无检索命中必须回答「未找到相关资料」并建议转人工, 禁止编造参数。
 """
@@ -27,7 +27,7 @@ SYSTEM_PROMPT = """你是莱克电气产品知识库问答助手。规则:
 
 
 def _llm_chat(prompt: str) -> str:
-    base = os.environ.get("LLM_BASE_URL", "http://192.168.7.176:8080/v1").rstrip("/")
+    base = os.environ.get("LLM_BASE_URL", "http://127.0.0.1:8080/v1").rstrip("/")
     model = os.environ.get("LLM_MODEL", "qwen3.6-35b-a3b")
     resp = requests.post(
         f"{base}/chat/completions",

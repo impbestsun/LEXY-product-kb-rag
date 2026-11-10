@@ -1,63 +1,61 @@
-# LEXY 产品知识库与售前智能问答 (product-kb-rag)
+# LEXY Product Knowledge Base and RAG
 
-莱克电气 品牌部 —— 莱克 / 碧云泉 / 咖博士全 SKU 产品知识库，基于 RAG（检索增强生成）的售前智能问答，服务电商客服、直播话术辅助与新员工产品培训。
+A small retrieval-augmented question-answering reference implementation for product support. It includes sample LEXY product cards, document chunking, embedding requests, JSON-backed cosine retrieval, and an answer-generation client.
 
-目标：在售 SKU 知识覆盖 **100%**；客服首次响应时间 **5 分钟 → 30 秒**；重复性售前咨询转人工率 **-50%**。
+## Status and scope
 
-## AI 工具与技术栈
+This is a starter implementation with sample data, not a complete product catalog or a validated production support service. Product facts and after-sales information must be checked against current authoritative documentation before use.
 
-| 环节 | 工具/模型 | 说明 |
-|---|---|---|
-| 文档解析与切分 | Python（YAML/Markdown 结构化 + 滑动窗口切分） | SKU 卡片 / 参数表 / 售后政策 |
-| Embedding | bge-m3（本地 vLLM/Ollama 部署）或 OpenAI 兼容接口 | 1024 维稠密向量 |
-| 向量检索 | 本地 numpy 余弦检索（零外部依赖，可替换 Qdrant/Milvus） | Top-K + 相似度阈值 |
-| 答案生成 | Qwen3.6-35B-A3B（部门 RISC-V AI 服务器 llama.cpp 部署，OpenAI 兼容接口） | 检索结果 grounding + 引用来源 |
-| 评测 | 抽样问答集 + 人工抽检 | 准确率/拒答率统计 |
+The answer prompt requires grounding in retrieved material and source citations. When retrieval returns no hits, the code returns a fixed "not found; refer to a human" response. The included evaluation checks whether an expected SKU appears in retrieved citations; it does not establish factual answer accuracy.
 
-## 目录结构
+## Components
 
-```
-├── data/skus/
-│   └── catalog.example.yaml     # SKU 知识卡片 (示例 3 款, 按此模板扩充至全量 SKU)
-├── rag/
-│   ├── ingest.py                # YAML/MD -> 文本块 (chunk)
-│   ├── embed.py                 # Embedding 客户端 (本地 bge-m3 或 OpenAI 兼容)
-│   ├── store.py                 # 向量库 (numpy 余弦, JSON 持久化)
-│   └── qa.py                    # RAG 问答链 (检索 + grounding 生成 + 引用)
-├── eval/
-│   └── sample_qa.yaml           # 评测问答集
-└── requirements.txt
-```
+| Path | Purpose |
+|---|---|
+| `data/skus/catalog.example.yaml` | Example product cards |
+| `rag/ingest.py` | YAML/Markdown documents to retrieval chunks |
+| `rag/embed.py` | Embedding client for an OpenAI-compatible endpoint |
+| `rag/store.py` | Cosine search and JSON persistence |
+| `rag/qa.py` | Retrieval, answer generation, and citation metadata |
+| `eval/sample_qa.yaml` | Sample SKU-retrieval checks |
 
-## 快速开始
+## Quick start
+
+Use Python 3.10 or newer and install the existing dependencies:
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+```
 
-# 1. 构建知识库 (默认读取 data/skus/, 输出 kb.json)
-python -m rag.ingest --input data/skus --out kb.json
-python -m rag.embed  --input kb.json --out kb.vec.json
+Run your own embedding and chat services before embedding documents or generating answers. The URLs and model IDs below are local examples; set them to match the services you operate.
 
-# 2. 问答 (默认连部门 Qwen 服务器, 可用环境变量覆盖)
-export LLM_BASE_URL=http://192.168.7.176:8080/v1   # 部门 RISC-V 服务器 llama.cpp
+```bash
+export EMBED_BASE_URL=http://127.0.0.1:11434/v1
+export EMBED_MODEL=bge-m3
+export LLM_BASE_URL=http://127.0.0.1:8080/v1
 export LLM_MODEL=qwen3.6-35b-a3b
+
+# Build and embed the sample knowledge base.
+python -m rag.ingest --input data/skus --out kb.json
+python -m rag.embed --input kb.json --out kb.vec.json
+
+# Ask a question grounded in the retrieved cards.
 python -m rag.qa --kb kb.vec.json --q "碧云泉C5 Plus的滤芯多久换一次"
 
-# 3. 评测
+# Run the included SKU-retrieval checks.
 python -m rag.qa --kb kb.vec.json --eval eval/sample_qa.yaml
 ```
 
-## 知识卡片规范（data/skus/catalog.example.yaml）
+Embedding and chat requests are sent to the configured endpoints. The code defaults to local loopback endpoints; it contains no deployment-specific server address. Model access, endpoint availability, and any provider costs are the operator's responsibility.
 
-每个 SKU 一张卡片：规格参数 / 核心卖点 / 适用场景 / 常见问题 FAQ / 售后政策 / 易混淆点。
-**FAQ 与易混淆点是问答准确率的关键字段，必填。**
+## Product-card guidance
 
-## 与客服系统集成
+Keep specifications, selling points, applicable scenarios, FAQs, after-sales policies, and commonly confused details in each card. Preserve source references and review the sample content before expanding it.
 
-- 客服工作台：`rag.qa.answer()` 返回答案 + 引用 SKU 卡片，客服一键转发/编辑
-- 直播话术辅助：同一知识库驱动「卖点速查」浮层
-- 新员工培训：按卡片生成产品知识测验题
+Do not invent specifications or treat a historical price note as a current quote. Human review remains necessary for customer-facing answers.
 
-## 红线
+## 中文说明
 
-- 答案必须带引用来源（SKU 卡片），无检索命中时明确回答「未找到相关资料」并转人工，**禁止编造参数**
+本仓库是产品知识库与问答链的参考实现，附带示例数据。通过 `EMBED_BASE_URL`、`EMBED_MODEL`、`LLM_BASE_URL` 和 `LLM_MODEL` 配置自己使用的服务；默认地址为本机回环地址。
+
+检索未命中时返回「未找到相关资料，建议转人工」。示例评测只检查期望 SKU 是否出现在引用中，不代表答案事实准确率或生产环境验收结果。产品和品牌名称在示例中保留其真实含义。
